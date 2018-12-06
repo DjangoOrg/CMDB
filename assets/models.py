@@ -100,37 +100,171 @@ class SecurityDevice(models.Model):
 
 
 class StorageDevice(models.Model):
-    pass
+    '''存储设备'''
+    sub_asset_type_choice = (
+        ('0','磁盘阵列'),
+        ('1','网络存储器'),
+        ('2','磁带库'),
+        ('3','磁带机')
+    )
+    asset = models.OneToOneField('Asset',on_delete=models.CASCADE,verbose_name="存储设备和资产表一对一关系")
+    sub_asset_type = models.SmallIntegerField(choices=sub_asset_type_choice,default=0,verbose_name="存储设备类型")
+
+    def __str__(self):
+        return self.asset.name + '--' + self.get_sub_asset_type_display()
+    class Meta:
+        verbose_name = '存储设备'
+        verbose_name_plural = "存储设备"
 
 class NetworkDevice(models.Model):
-    pass
+    '''网络设备'''
+    sub_asset_type_choice = (
+        ('0','路由器'),
+        ('1','交换机'),
+        ('2','负载均衡器'),
+        ('3','VPN设备')
+    )
+    asset = models.OneToOneField('Asset',on_delete=models.CASCADE,verbose_name="网络设备和资产表一对一关系")
+    sub_asset_type = models.SmallIntegerField(choices=sub_asset_type_choice,default=0,verbose_name="网络设备类型")
+    vlan_ip = models.GenericIPAddressField(null=True,blank=True,verbose_name="VlanIP")
+    intranet_ip = models.GenericIPAddressField(null=True,blank=True,verbose_name="内网IP")
+    model = models.CharField(max_length=128,null=True,blank=True,verbose_name="网络设备型号")
+    firmware = models.CharField(max_length=128,null=True,blank=True,verbose_name="设备固件版本")
+    port_num = models.SmallIntegerField(null=True,blank=True,verbose_name="端口数")
+    device_detail = models.TextField(null=True,blank=True,verbose_name="详细配置")
+    def __str__(self):
+        return self.asset.name + '--' + self.get_sub_asset_type_display()
+    class Meta:
+        verbose_name = "网络设备"
+        verbose_name_plural = "网络设备"
 
 class SoftWare(models.Model):
-    pass
+    '''软件资产'''
+    sub_asset_type_choice = (
+        ('0','操作系统'),
+        ('1','办公\开发软件'),
+        ('2','业务软件')
+    )
+    asset = models.OneToOneField("Asset",on_delete=models.CASCADE,verbose_name="软件资产和资产表一对一关系")
+    sub_asset_type = models.SmallIntegerField(choices=sub_asset_type_choice,default=0,verbose_name="软件类型")
+    license_num = models.IntegerField(default=1,verbose_name="授权数量")
+    version = models.CharField(max_length=128,help_text='例如：CentOS release 6.7 (Final)',verbose_name="软件版本")
+    def __str__(self):
+        return self.asset.name + '--' + self.get_sub_asset_type_display()
+    class Meta:
+        verbose_name = "软件资产"
+        verbose_name_plural = "软件资产"
 
 class IDC(models.Model):
-    pass
+    '''机房'''
+    name = models.CharField(max_length=128,unique=True,verbose_name="机房名称")
+    memo = models.CharField(max_length=256,null=True,blank=True,verbose_name="备注")
+    def __str__(self):
+        return self.name
+    class Meta:
+        verbose_name = "机房"
+        verbose_name_plural = "机房"
 
 class Manufacturer(models.Model):
-    pass
+    '''厂商'''
+    name = models.CharField(max_length=128,verbose_name="厂商名称")
+    telephone = models.CharField(max_length=11,null=True,blank=True,verbose_name="联系电话")
+    memo = models.CharField(max_length=256,null=True,blank=True,verbose_name="备注")
+    def __str__(self):
+        return self.name
+    class Meta:
+        verbose_name = "制造商"
+        verbose_name_plural = "制造商"
 
 class BusinessUnit(models.Model):
-    pass
+    '''业务线'''
+    parent_unit = models.ForeignKey('self',on_delete=models.CASCADE,null=True,blank=True,related_name="parent_level")
+    name = models.CharField(max_length=64,verbose_name="业务线名称")
+    memo = models.CharField(max_length=256,null=True,blank=True,verbose_name="备注")
+    def __str__(self):
+        return self.name
+    class Meta:
+        verbose_name = "业务线"
+        verbose_name_plural = "业务线"
 
 class Contract(models.Model):
-    pass
+    '''合同'''
+    sn = models.CharField(max_length=128,unique=True,verbose_name="合同号")
+    name = models.CharField(max_length=64,verbose_name="合同名称")
+    price = models.FloatField(verbose_name="合同金额")
+    detail = models.TextField(null=True,blank=True,verbose_name="合同详情")
+    start_day = models.DateField(null=True,blank=True,verbose_name="合同开始日期")
+    end_day = models.DateField(null=True,blank=True,verbose_name="合同结束日期")
+    license_num = models.IntegerField(null=True,blank=True,verbose_name="license数量")
+    c_day = models.DateTimeField(auto_now_add=True,verbose_name="创建日期")
+    m_day = models.DateTimeField(auto_now=True,verbose_name="修改日期")
+    def __str__(self):
+        return self.name
+    class Meta:
+        verbose_name = "合同"
+        verbose_name_plural = "合同"
+
 
 class Tag(models.Model):
-    pass
+    '''标签'''
+    name = models.CharField(max_length=128,verbose_name="标签名称")
+    c_day = models.DateTimeField(auto_now_add=True,verbose_name="创建日期")
+    def __str__(self):
+        return self.name
+    class Meta:
+        verbose_name = '标签'
+        verbose_name_plural = "标签"
 
 class CPU(models.Model):
-    pass
+    '''CPU组件'''
+    asset = models.OneToOneField('Asset',on_delete=models.CASCADE,verbose_name='CPU和资产表一对一关系')
+    cpu_model = models.CharField(max_length=64,null=True,blank=True,verbose_name="CPU型号")
+    cpu_count = models.PositiveSmallIntegerField(default=1,verbose_name="物理CPU个数")
+    cpu_core_count = models.PositiveSmallIntegerField(default=2,verbose_name="CPU核数")
+    def __str__(self):
+        return self.asset.name + '--' + self.cpu_model
+    class Meta:
+        verbose_name = "CPU组件"
+        verbose_name_plural = "CPU组件"
+
 
 class RAM(models.Model):
-    pass
+    '''内存组件'''
+    asset = models.ForeignKey('Asset',on_delete=models.CASCADE)
+    sn = models.CharField(max_length=128,null=True,blank=True,verbose_name="SN号")
+    model = models.CharField(max_length=64,null=True,blank=True,verbose_name="内存型号")
+    manufacturer = models.CharField(max_length=64,null=True,blank=True,verbose_name="制造厂家")
+    slot = models.CharField(max_length=64,verbose_name="插槽")
+    capacity = models.IntegerField(verbose_name="内存大小(GB)")
+    def __str__(self):
+        return '%s:%s:%s:%s'%(self.asset.name,self.model,self.manufacturer,self.slot)
+    class Meta:
+        verbose_name = "内存组件"
+        verbose_name_plural = "内存组件"
+        unique_together = ('asset','slot')
 
 class Disk(models.Model):
-    pass
+    '''存储设备'''
+    interface_type_choice = (
+        ('SATA','SATA'),
+        ('SAS','SAS'),
+        ('SCSI','SCSI'),
+        ('SSD','SSD'),
+        ('unknow','unknow')
+    )
+    asset = models.ForeignKey('Asset',on_delete=models.CASCADE)
+    sn = models.CharField(max_length=128,verbose_name="硬盘SN号")
+    slot = models.CharField(max_length=64,null=True,blank=True,verbose_name="硬盘插槽")
+    model = models.CharField(max_length=64,null=True,blank=True,verbose_name="型号")
+    manufacturer = models.CharField(max_length=128,null=True,blank=True,verbose_name="制造厂家")
+    capacity = models.IntegerField(null=True,blank=True,verbose_name="硬盘容量(GB)")
+    interface_type = models.CharField(max_length=16,choices=interface_type_choice,default='unknow',verbose_name="硬盘接口类型")
+    def __str__(self):
+        return '%s: %s: %s: %sGB'%(self.asset.name,self.model,self.slot,self.capacity)
+    class Meta:
+        verbose_name = "硬盘"
+        verbose_name_plural = "硬盘"
+        unique_together = ('asset','sn')
 
 class NIC(models.Model):
     pass
