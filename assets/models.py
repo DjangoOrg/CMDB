@@ -44,7 +44,7 @@ class Asset(models.Model):
     class Meta:
         verbose_name = "资产总表"
         verbose_name_plural = "资产总表"
-        ordering = '[-c_time]'
+        ordering = ['-c_time']
 
 
 
@@ -267,12 +267,80 @@ class Disk(models.Model):
         unique_together = ('asset','sn')
 
 class NIC(models.Model):
-    pass
+    '''网卡'''
+    asset = models.ForeignKey('Asset',on_delete=models.CASCADE,verbose_name="网卡和资产表关联关系")
+    name = models.CharField(max_length=64,null=True,blank=True,verbose_name="网卡名称")
+    model = models.CharField(max_length=64,verbose_name="网卡型号")
+    mac = models.CharField(max_length=64,verbose_name="网卡Mac地址")
+    ip_addr = models.GenericIPAddressField(null=True,blank=True,verbose_name="网卡IP地址")
+    net_mask = models.GenericIPAddressField(null=True,blank=True,verbose_name="掩码")
+    bonding = models.GenericIPAddressField(null=True,blank=True,verbose_name="绑定地址")
+    def __str__(self):
+        return "%s: %s: %s"%(self.asset.name,self.model,self.mac)
+    class Meta:
+        verbose_name = "网卡"
+        verbose_name_plural = "网卡"
+        unique_together = ('asset', 'model','mac')
 
 class EventLog(models.Model):
-    pass
+    '''日志'''
+    event_type_choice = (
+        ('0','其他'),
+        ('1','硬件变更'),
+        ('2','新增配件'),
+        ('3','设备下线'),
+        ('4','设备上线'),
+        ('5','定期维护'),
+        ('6','业务上线\更新')
+    )
+    name = models.CharField(max_length=64,verbose_name="事件名称")
+    asset = models.ForeignKey('Asset',null=True,blank=True,on_delete=models.SET_NULL)
+    new_asset = models.ForeignKey('NewAssetApprovalZone',null=True,blank=True,on_delete=models.SET_NULL)
+    event_type = models.SmallIntegerField(choices=event_type_choice,default=0,verbose_name="事件类型")
+    component = models.CharField(max_length=256,null=True,blank=True,verbose_name="事件子项")
+    detail = models.TextField(verbose_name="事件详情")
+    date = models.DateTimeField(auto_now_add=True,verbose_name="事件时间")
+    user = models.ForeignKey(User,on_delete=models.SET_NULL,null=True,blank=True,verbose_name="事件执行人")
+    memo = models.TextField(null=True,blank=True,verbose_name="备注")
+    def __str__(self):
+        return self.name
+    class Meta:
+        verbose_name = "日志"
+        verbose_name_plural = "日志"
 
 class NewAssetApprovalZone(models.Model):
-    pass
+    '''新资产待审批'''
+    asset_type_choice = (
+        ('server', '服务器'),
+        ('networkdevice', '网络设备'),
+        ('storagedevice', '存储设备'),
+        ('securitydevice', '安全设备'),
+        ('IDC', '机房'),
+        ('software', '软件资产'),
+    )
+    sn = models.CharField(max_length=128,unique=True,verbose_name="资产SN号")
+    asset_type = models.CharField(max_length=64,choices=asset_type_choice,default='server',verbose_name="资产类型")
+    manufacturer = models.CharField(max_length=128,null=True,blank=True,verbose_name="生产厂家")
+    model = models.CharField(max_length=64,null=True,blank=True,verbose_name="资产型号")
+    ram_size = models.SmallIntegerField(null=True,blank=True,verbose_name="内存大小")
+    cpu_model = models.CharField(max_length=64,null=True,blank=True,verbose_name="cpu型号")
+    cpu_count = models.PositiveSmallIntegerField(null=True,blank=True,verbose_name="cpu数量")
+    cpu_core_count = models.PositiveSmallIntegerField(null=True,blank=True,verbose_name="cpu核数")
+    os_distribution = models.CharField(max_length=64,null=True,blank=True,verbose_name="系统发行版本")
+    os_type = models.CharField(max_length=64,null=True,blank=True,verbose_name="操作系统型号")
+    os_release = models.CharField(max_length=64,null=True,blank=True,verbose_name="操作系统版本")
+    data = models.TextField(verbose_name="资产数据")
+    c_time = models.DateTimeField(auto_now_add=True,verbose_name="创建日期")
+    m_time = models.DateTimeField(auto_now=True,verbose_name="更新日期")
+    approved = models.BooleanField(default=False,verbose_name="是否批准")
+    def __str__(self):
+        return self.sn
+    class Meta:
+        verbose_name = "新上线待批准资产"
+        verbose_name_plural = "新上线待批准资产"
+        ordering = ['-c_time']
+
+
+
 
 
