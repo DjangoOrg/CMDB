@@ -10,6 +10,31 @@
 """
 import subprocess
 
+def collect():
+    filter_key = ['Manufacturer', 'Serial Number', 'Product Name', 'UUID', 'Wake-up Type']
+    raw_data = {}
+    for key in filter_key:
+        res = subprocess.Popen("sudo dmidecode -t system | grep '%s'" % key,stdout=subprocess.PIPE,shell=True)
+        res = res.stdout.read().decode()
+        data_list = res.split(":")
+        if len(data_list) == 2:
+            raw_data[key] = data_list[1].strip()
+        else:
+            raw_data[key] = ' '
+    data = dict()
+    data['manufacturer'] = raw_data['Manufacturer']
+    data['asset_type'] = 'server'
+    data['model'] = raw_data['Product Name']
+    data['sn'] = raw_data['Serial Number']
+    data['uuid'] = raw_data['UUID']
+    data['wake_up_type'] = raw_data['Wake-up Type']
+    data.update(get_cpu_info())
+    data.update(get_os_info())
+    data.update(get_ram_info())
+    data.update(get_nic_ifo())
+    data.update(get_disk_info())
+    return data
+
 def get_os_info():
     '''
     获取操作系统信息
@@ -106,6 +131,7 @@ def get_nic_ifo():
     last_mac_addr = None
     for line in raw_data:
         if next_ip_line:
+            next_ip_line = False
             nic_name = last_mac_addr.split()[0].strip()
             mac_addr = last_mac_addr.strip('HWaddr')[1].strip()
             raw_ip_addr = line.split('inet addr:')
@@ -153,6 +179,33 @@ def get_nic_ifo():
         'nic':nic_list
     }
     return data
+
+def get_disk_info():
+    '''
+    获取磁盘信息
+    :return:
+    '''
+    raw_data = subprocess.Popen("sudo hdparm -i /dev/sda | grep Model",stdout=subprocess.PIPE,shell=True)
+    raw_data = raw_data.stdout.read().decode()
+    data_list = raw_data.split(',')
+    model = data_list[0].split('=')[1].strip()
+    sn = data_list[2].split('=')[1].strip()
+    size_data = subprocess.Popen("sudo fdisk -l /dev/sda | grep Disk | head -1",stdout=subprocess.PIPE,shell=True)
+    size_data = size_data.stdout.read().decode()
+    size = size_data.split(":")[1].strip().split(",")[0].strip()
+    disk_dict = dict()
+    disk_dict["model"] = model
+    disk_dict["sn"] = sn
+    disk_dict["size"] = size
+    data = {
+        'physical_disk_driver':[disk_dict]
+    }
+    return data
+
+if __name__ == '__main__':
+    d = collect()
+    print(d)
+
 
 
 
