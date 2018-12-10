@@ -17,6 +17,7 @@ from Client.conf import settings
 class ArgvHandler(object):
     def __init__(self,args):
         self.args = args
+        self.parse_args()
     def parse_args(self):
         if len(self.args) > 1 and hasattr(self,self.args[1]):
             func = getattr(self,self.args[1])
@@ -48,7 +49,8 @@ class ArgvHandler(object):
         :return:
         '''
         info = InfoCollection().collect()
-        data = {'asset_datea':json.dumps(info)}
+        data = {'asset_data':json.dumps(info)}
+        print(data)
         url = "http://%s:%s%s" % (settings.Params.get('server'),settings.Params.get('port'),settings.Params.get('url'))
         print('正在将数据发送至： [%s]  ......' % url)
         try:

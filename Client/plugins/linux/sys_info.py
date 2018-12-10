@@ -185,18 +185,18 @@ def get_disk_info():
     获取磁盘信息
     :return:
     '''
-    raw_data = subprocess.Popen("sudo hdparm -i /dev/sda | grep Model",stdout=subprocess.PIPE,shell=True)
-    raw_data = raw_data.stdout.read().decode()
-    data_list = raw_data.split(',')
-    model = data_list[0].split('=')[1].strip()
-    sn = data_list[2].split('=')[1].strip()
-    size_data = subprocess.Popen("sudo fdisk -l /dev/sda | grep Disk | head -1",stdout=subprocess.PIPE,shell=True)
-    size_data = size_data.stdout.read().decode()
-    size = size_data.split(":")[1].strip().split(",")[0].strip()
+    # raw_data = subprocess.Popen("sudo hdparm -i /dev/sda | grep Model",stdout=subprocess.PIPE,shell=True)
+    # raw_data = raw_data.stdout.read().decode()
+    # data_list = raw_data.split(',')
+    # model = data_list[0].split('=')[1].strip()
+    # sn = data_list[2].split('=')[1].strip()
+    # size_data = subprocess.Popen("sudo fdisk -l /dev/sda | grep Disk | head -1",stdout=subprocess.PIPE,shell=True)
+    # size_data = size_data.stdout.read().decode()
+    # size = size_data.split(":")[1].strip().split(",")[0].strip()
     disk_dict = dict()
-    disk_dict["model"] = model
-    disk_dict["sn"] = sn
-    disk_dict["size"] = size
+    disk_dict["model"] = 'dell'
+    disk_dict["sn"] = '123654'
+    disk_dict["size"] = '800'
     data = {
         'physical_disk_driver':[disk_dict]
     }
