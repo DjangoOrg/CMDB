@@ -5,6 +5,11 @@ class NewAssetAdmin(admin.ModelAdmin):
     list_display = ['asset_type', 'sn', 'model', 'manufacturer', 'c_time', 'm_time']
     list_filter = ['asset_type', 'manufacturer', 'c_time']
     search_fields = ('sn',)
+    def approve_selected_new_assets(self,request,queryset):
+        selectd = request.POST.getlist(admin.ACTION_CHECKBOX_NAME)
+        success_upline_number = 0
+        for asset_id in selectd:
+
 
 
 class AssetAdmin(admin.ModelAdmin):
