@@ -11,25 +11,25 @@
 import json
 from assets import models
 
-# class NewAsset(object):
-#     def __init__(self,data):
-#         self.data = data
-#     def add_to_new_zone(self):
-#         defaults1 = {
-#             'data': json.dumps(self.data),
-#             'asset_type': self.data.get('asset_type'),
-#             'manufacturer': self.data.get('manufacturer'),
-#             'model': self.data.get('model'),
-#             'ram_size': self.data.get('ram_size'),
-#             'cpu_model': self.data.get('cpu_model'),
-#             'cpu_count': self.data.get('cpu_count'),
-#             'cpu_core_count': self.data.get('cpu_core_count'),
-#             'os_distribution': self.data.get('os_distribution'),
-#             'os_release': self.data.get('os_release'),
-#             'os_type': self.data.get('os_type'),
-#         }
-#         models.NewAssetApprovalZone.objects.update_or_create(sn=self.data.get('sn'),defaults=defaults1)
-#         return '资产已经加入或更新待审批区！'
+class NewAsset(object):
+    def __init__(self,data):
+        self.data = data
+    def add_to_new_zone(self):
+        defaults1 = {
+            'data': json.dumps(self.data),
+            'asset_type': self.data.get('asset_type'),
+            'manufacturer': self.data.get('manufacturer'),
+            'model': self.data.get('model'),
+            'ram_size': self.data.get('ram_size'),
+            'cpu_model': self.data.get('cpu_model'),
+            'cpu_count': self.data.get('cpu_count'),
+            'cpu_core_count': self.data.get('cpu_core_count'),
+            'os_distribution': self.data.get('os_distribution'),
+            'os_release': self.data.get('os_release'),
+            'os_type': self.data.get('os_type'),
+        }
+        models.NewAssetApprovalZone.objects.update_or_create(sn=self.data.get('sn'),defaults=defaults1)
+        return '资产已经加入或更新待审批区！'
 def log(log_type,msg=None,asset=None,new_asset=None,request=None):
     '''
     记录日志
@@ -60,7 +60,30 @@ class ApproveAsset:
     def __init__(self,request,assetid):
         self.request = request
         self.new_asset = models.NewAssetApprovalZone.objects.get(id=assetid)
-        self.data = self.new_asset.data
+        self.data = json.loads(self.new_asset.data)
+    def asset_upline(self):
+        func = getattr(self,"_%s_upline" % self.new_asset.asset_type)
+        ret = func()
+        return ret and True
+    def _server_upline(self):
+        asset = self._create_asset()
+        try:
+            self._create_manufacturer(asset)
+            self._create_server(asset)
+            self._create_CPU(asset)
+            self._create_RAM(asset)
+            self._create_disk(asset)
+            self._create_nic(asset)
+            self._delete_original_asset()
+        except Exception as e:
+            asset.delete()
+            print("审批失败",e)
+            log('approve_failed',msg=e,new_asset=self.new_asset,request=self.request)
+            return  False
+        else:
+            log('upline', asset=asset, request=self.request)
+            return True
+
     def _create_asset(self):
         '''
         创建资产并上线
@@ -154,8 +177,27 @@ class ApproveAsset:
             nic = models.NIC()
             nic.mac = nic_dict.get('mac','网卡缺少mac地址')
             nic.model = nic_dict.get('model','网卡型号未知')
+            nic.asset = asset
+            nic.name = nic_dict.get('name')
+            nic.model = nic_dict.get('model')
+            nic.ip_addr = nic_dict.get('ip_addr')
+            nic.net_mask = nic_dict.get('netmask')
+            nic.save()
+    def _delete_original_asset(self):
+        self.new_asset.delete()
 
-
+class UpdateAsset:
+    '''
+    更新已上线的资产
+    '''
+    def __init__(self,request,asset,data):
+        self.request = request
+        self.asset = asset
+        self.data = data
+    def asset_update(self):
+        func = getattr(self,'_%s_update' % self.data.get('asset_type'))
+        func()
+    def _update_manufacturer(self):
 
 
 
